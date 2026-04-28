@@ -7,17 +7,17 @@
     <style>
 :root {
   color-scheme: light;
-  --bg: #f5f7fb;
-  --card: #ffffff;
-  --text: #1f2937;
-  --subtle: #6b7280;
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
-  --border: #dbe3f0;
-  --correct-bg: #e8f7ec;
-  --correct-text: #15803d;
-  --wrong-bg: #fdecec;
-  --wrong-text: #dc2626;
+  --bg: #f4f1e8;
+  --card: #fbf8f0;
+  --text: #2f3a32;
+  --subtle: #66756b;
+  --primary: #5c7a63;
+  --primary-dark: #4e6854;
+  --border: #d8d2c2;
+  --correct-bg: #e6f1e8;
+  --correct-text: #2f6b3b;
+  --wrong-bg: #f8ebe6;
+  --wrong-text: #b85c4a;
 }
 
 * {
@@ -125,8 +125,8 @@ body {
 }
 
 .secondary-btn {
-  background: #e5eefc;
-  color: var(--primary-dark);
+  background: #e6e0d2;
+  color: #4e6854;
 }
 
 .primary-btn:hover:not(:disabled) {
@@ -155,8 +155,8 @@ body {
   border-radius: 999px;
   padding: 6px 10px;
   font-size: 13px;
-  background: #eef4ff;
-  color: var(--primary-dark);
+  background: #ece8dc;
+  color: #55685b;
 }
 
 .progress-text {
@@ -166,7 +166,7 @@ body {
 
 .progress-track {
   height: 10px;
-  background: #e5e7eb;
+  background: #ddd6c8;
   border-radius: 999px;
   overflow: hidden;
   margin-bottom: 16px;
@@ -175,7 +175,7 @@ body {
 .progress-bar {
   height: 100%;
   width: 0;
-  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  background: linear-gradient(90deg, #7ea07f, #5c7a63);
 }
 
 .question-meta {
@@ -210,7 +210,7 @@ body {
 
 .option-btn:hover:not(:disabled) {
   border-color: var(--primary);
-  background: #f8fbff;
+  background: #f4f0e7;
 }
 
 .option-btn.correct {
@@ -246,7 +246,7 @@ body {
 }
 
 .wrong-pill {
-  background: #fff1f2;
+  background: #f6e7df;
   color: var(--wrong-text);
 }
 
@@ -2692,7 +2692,8 @@ const state = {
   },
   pendingRetry: false,
   completed: false,
-  selectedRange: { start: 1, end: 100 },
+  selectedRange: { start: 1, end: 200 },
+  autoAdvanceTimer: null,
 };
 
 const praiseMessages = [
@@ -2747,7 +2748,7 @@ function resetAll() {
   state.pendingRetry = false;
   state.completed = false;
   const startNumber = Number(rangeStartInput.value) || 1;
-  const endNumber = Number(rangeEndInput.value) || 100;
+  const endNumber = Number(rangeEndInput.value) || 200;
   if (startNumber > endNumber) {
     alert('起始题号不能大于结束题号。');
     return false;
@@ -2787,6 +2788,7 @@ function renderQuestion() {
   if (!item) return;
 
   state.answered = false;
+  clearAutoAdvanceTimer();
   nextBtn.disabled = true;
   feedbackEl.textContent = '';
   feedbackEl.className = 'feedback';
@@ -2811,6 +2813,13 @@ function renderQuestion() {
   });
 }
 
+function clearAutoAdvanceTimer() {
+  if (state.autoAdvanceTimer) {
+    clearTimeout(state.autoAdvanceTimer);
+    state.autoAdvanceTimer = null;
+  }
+}
+
 function answerQuestion(selected) {
   if (state.answered) return;
   state.answered = true;
@@ -2830,8 +2839,12 @@ function answerQuestion(selected) {
 
   if (isRight) {
     state.roundStats.correct += 1;
-    feedbackEl.textContent = '回答正确。';
+    feedbackEl.textContent = '回答正确，1 秒后自动下一题。';
     feedbackEl.className = 'feedback correct';
+    state.autoAdvanceTimer = setTimeout(() => {
+      state.autoAdvanceTimer = null;
+      advance();
+    }, 1000);
   } else {
     state.roundStats.wrong += 1;
     wrongCount.textContent = `本轮错题 ${state.roundStats.wrong}`;
@@ -2843,6 +2856,7 @@ function answerQuestion(selected) {
 }
 
 function showRoundResult() {
+  clearAutoAdvanceTimer();
   quizEl.classList.add('hidden');
   resultEl.classList.remove('hidden');
 
@@ -2886,6 +2900,7 @@ function startFirstRound() {
 }
 
 function handleResultAction() {
+  clearAutoAdvanceTimer();
   if (state.pendingRetry) {
     prepareRetryRound();
     resultEl.classList.add('hidden');
